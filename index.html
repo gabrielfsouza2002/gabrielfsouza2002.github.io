@@ -81,6 +81,61 @@
     <p>
       Na etapa final do processo, trabalhei na submissão de um patch para modernizar a inicialização de drivers. Utilizei as funções <code>devm_regulator_get_enable()</code>, <code>devm_regulator_get_enable_optional()</code> e <code>devm_regulator_get_enable_read_voltage()</code> para substituir chamadas manuais de inicialização, promovendo uma abordagem mais segura e moderna. Essa mudança não apenas reduziu o número de linhas de código, como também melhorou a gestão automática de recursos pelo kernel. Foi um desafio entender a compatibilidade dessas funções com o driver existente, mas ao final, ganhei uma compreensão sólida sobre como manter e evoluir código legado no kernel Linux.
     </p>
+
+    <h2>Andamento do Envio do Patch</h2>
+    <h3>Tentativa 1:</h3>
+    <p>
+      Na primeira tentativa, enfrentamos problemas na compilação devido a um ponteiro sendo retornado onde não deveríamos. Abaixo, você pode ver a imagem que ilustra esse erro:
+    </p>
+    <img src="imagem1.jpg" alt="Problema de compilação - Retorno de ponteiro incorreto" style="width: 100%; max-width: 600px;">
+    
+    <h3>Tentativa 2:</h3>
+    <p>
+      Na segunda tentativa, decidimos modificar apenas um arquivo, o que resolveu o problema de compilação. Contudo, enviamos o patch sem incluir o commit anterior, o que resultou em inconsistência no envio. Como resultado, foi necessário realizar o processo de git squash. Veja a imagem abaixo:
+    </p>
+    <img src="imagem2.jpg" alt="Problema de inconsistência no envio - Necessidade de git squash" style="width: 100%; max-width: 600px;">
+    
+    <h3>Tentativa 3:</h3>
+    <p>
+      Na terceira tentativa, enfrentamos dificuldades para fazer o git squash corretamente. Como solução, restauramos o repositório ao estado inicial usando os comandos <code>git fetch</code> e <code>git pull</code>. A seguir, o patch enviado:
+    </p>
+    <pre>
+Replace a single instance of legacy regulator with devm_regulator_get_enable().
+This change improves code clarity and aligns with modern kernel APIs.
+
+Signed-off-by: Gabriel Souza Araujo &lt;gabrielfsouza.araujo@gmail.com&gt;
+Co-developed-by: Cesar Bispo &lt;cesar.bispo@ime.usp.br&gt;
+Signed-off-by: Cesar Bispo &lt;cesar.bispo@ime.usp.br&gt;
+---
+The first version [1] did not compile due to incorrect use of pointers and improper
+parameterization of the devm_regulator_get_enable() function.
+These issues have been fixed, and the code now compiles successfully.
+
+[1] https://lore.kernel.org/linux-iio/20250429160526.5934-1-cesar.bispo@ime.usp.br/
+
+ drivers/iio/adc/qcom-pm8xxx-xoadc.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/iio/adc/qcom-pm8xxx-xoadc.c b/drivers/iio/adc/qcom-pm8xxx-xoadc.c
+index 226285992..8b2e798d0 100644
+--- a/drivers/iio/adc/qcom-pm8xxx-xoadc.c
++++ b/drivers/iio/adc/qcom-pm8xxx-xoadc.c
+@@ -923,7 +923,7 @@ static int pm8xxx_xoadc_probe(struct platform_device *pdev)
+                        pm8xxx_eoc_irq, NULL, 0, variant->name, indio_dev);
+        if (ret) {
+                dev_err(dev, "unable to request IRQ\n");
+-               goto out_disable_vref;
++               return ret;
+        }
+
+        indio_dev->name = variant->name;
+@@ -934,7 +934,7 @@ static int pm8xxx_xoadc_probe(struct platform_device *pdev)
+
+        ret = iio_device_register(indio_dev);
+        if (ret)
+-               goto out_disable_vref;
++               return ret;
+   </pre>
   </main>
 </body>
 </html>
