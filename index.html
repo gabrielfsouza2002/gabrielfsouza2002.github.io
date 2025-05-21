@@ -91,36 +91,44 @@
     
     <h3>Tentativa 2:</h3>
     <p>
-      Na segunda tentativa, decidimos modificar apenas um arquivo, o que resolveu o problema de compilação. Contudo, enviamos o patch sem incluir o commit anterior, o que resultou em inconsistência no envio. Como resultado, foi necessário realizar o processo de git squash. Veja a imagem abaixo:
+      Na segunda tentativa, decidimos modificar apenas um arquivo, o que resolveu o problema de compilação. Entretato, enviamos o patch sem incluir o commit anterior, o que resultou em inconsistência no envio. Como resultado, foi necessário realizar o processo de git squash. Veja a imagem abaixo:
     </p>
     <img src="imagem2.jpg" alt="Problema de inconsistência no envio - Necessidade de git squash" style="width: 100%; max-width: 600px;">
     
     <h3>Tentativa 3:</h3>
     <p>
-      Na terceira tentativa, enfrentamos dificuldades para fazer o git squash corretamente. Como solução, restauramos o repositório ao estado inicial usando os comandos <code>git fetch</code> e <code>git pull</code>. A seguir, o patch enviado:
+      Na terceira tentativa, enfrentamos dificuldades para fazer o git squash corretamente. Como solução, restauramos o repositório ao estado inicial usando os comandos <code>git fetch</code> e <code>git pull</code>. A seguir, o patch que estamos desenvolvendo:
     </p>
     <pre>
+      
 Replace a single instance of legacy regulator with devm_regulator_get_enable().
 This change improves code clarity and aligns with modern kernel APIs.
 
-Signed-off-by: Gabriel Souza Araujo &lt;gabrielfsouza.araujo@gmail.com&gt;
-Co-developed-by: Cesar Bispo &lt;cesar.bispo@ime.usp.br&gt;
-Signed-off-by: Cesar Bispo &lt;cesar.bispo@ime.usp.br&gt;
+Signed-off-by: Gabriel Souza Araujo <gabrielfsouza.araujo@gmail.com>
+Co-developed-by: Cesar Bispo <cesar.bispo@ime.usp.br>
+Signed-off-by: Cesar Bispo <cesar.bispo@ime.usp.br>
 ---
-The first version [1] did not compile due to incorrect use of pointers and improper
-parameterization of the devm_regulator_get_enable() function.
-These issues have been fixed, and the code now compiles successfully.
-
-[1] https://lore.kernel.org/linux-iio/20250429160526.5934-1-cesar.bispo@ime.usp.br/
-
- drivers/iio/adc/qcom-pm8xxx-xoadc.c | 6 ++----
- 1 file changed, 2 insertions(+), 4 deletions(-)
+ drivers/iio/adc/qcom-pm8xxx-xoadc.c | 13 +++----------
+ 1 file changed, 3 insertions(+), 10 deletions(-)
 
 diff --git a/drivers/iio/adc/qcom-pm8xxx-xoadc.c b/drivers/iio/adc/qcom-pm8xxx-xoadc.c
-index 226285992..8b2e798d0 100644
+index 31f88cf7f7f1..a37ba6fad146 100644
 --- a/drivers/iio/adc/qcom-pm8xxx-xoadc.c
 +++ b/drivers/iio/adc/qcom-pm8xxx-xoadc.c
-@@ -923,7 +923,7 @@ static int pm8xxx_xoadc_probe(struct platform_device *pdev)
+@@ -911,11 +911,7 @@ static int pm8xxx_xoadc_probe(struct platform_device *pdev)
+        adc->map = map;
+
+        /* Bring up regulator */
+-       adc->vref = devm_regulator_get(dev, "xoadc-ref");
+-       if (IS_ERR(adc->vref))
+-               return dev_err_probe(dev, PTR_ERR(adc->vref),
+-                                    "failed to get XOADC VREF regulator\n");
+-       ret = regulator_enable(adc->vref);
++       ret = devm_regulator_get_enable(dev, "xoadc-ref");
+        if (ret) {
+                dev_err(dev, "failed to enable XOADC VREF regulator\n");
+                return ret;
+@@ -925,7 +921,7 @@ static int pm8xxx_xoadc_probe(struct platform_device *pdev)
                         pm8xxx_eoc_irq, NULL, 0, variant->name, indio_dev);
         if (ret) {
                 dev_err(dev, "unable to request IRQ\n");
@@ -129,12 +137,25 @@ index 226285992..8b2e798d0 100644
         }
 
         indio_dev->name = variant->name;
-@@ -934,7 +934,7 @@ static int pm8xxx_xoadc_probe(struct platform_device *pdev)
+@@ -936,7 +932,7 @@ static int pm8xxx_xoadc_probe(struct platform_device *pdev)
 
         ret = iio_device_register(indio_dev);
         if (ret)
 -               goto out_disable_vref;
 +               return ret;
+
+        ret = pm8xxx_calibrate_device(adc);
+        if (ret)
+@@ -948,9 +944,6 @@ static int pm8xxx_xoadc_probe(struct platform_device *pdev)
+
+ out_unreg_device:
+        iio_device_unregister(indio_dev);
+-out_disable_vref:
+-       regulator_disable(adc->vref);
+-
+        return ret;
+ }
+
    </pre>
   </main>
 </body>
